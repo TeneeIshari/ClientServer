@@ -5,6 +5,9 @@
 package com.smartcampus.smartcampus.dao;
 
 
+import com.smartcampus.smartcampus.model.Room;
+import com.smartcampus.smartcampus.model.Sensor;
+import com.smartcampus.smartcampus.model.SensorReading;
 import java.util.ArrayList;
 import java.util.List;
 
