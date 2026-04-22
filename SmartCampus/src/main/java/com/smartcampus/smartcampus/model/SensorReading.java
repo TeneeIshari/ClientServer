@@ -8,9 +8,8 @@ import java.util.UUID;
 
 /**
  * Model class representing a single sensor reading event.
- * Implements BaseModel for Generic DAO support.
  */
-public class SensorReading implements BaseModel {
+public class SensorReading {
     private String id; // Unique reading event ID
     private long timestamp; // Epoch time (ms)
     private double value; // Metric value
@@ -25,10 +24,8 @@ public class SensorReading implements BaseModel {
         this.value = value;
     }
 
-    @Override
     public String getId() { return id; }
 
-    @Override
     public void setId(String id) { this.id = id; }
 
     public long getTimestamp() { return timestamp; }

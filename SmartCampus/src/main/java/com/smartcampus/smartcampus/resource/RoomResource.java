@@ -1,73 +1,60 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.smartcampus.smartcampus.resource;
 
-import com.smartcampus.smartcampus.dao.GenericDAO;
-import com.smartcampus.smartcampus.dao.MockDatabase;
-import com.smartcampus.smartcampus.exception.SmartCampusException.DataNotFoundException;
-import com.smartcampus.smartcampus.exception.SmartCampusException.RoomNotEmptyException;
+import com.smartcampus.smartcampus.exception.RoomNotEmptyException;
 import com.smartcampus.smartcampus.model.Room;
+import com.smartcampus.smartcampus.service.RoomService;
+import com.smartcampus.smartcampus.service.SensorService;
 import java.util.List;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /**
- * REST resource for managing Room entities.
-
+ * Resource class for managing rooms.
  */
 @Path("/rooms")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
 public class RoomResource {
 
-    private GenericDAO<Room> roomDAO = new GenericDAO<>(MockDatabase.ROOMS);
+    private RoomService roomService = new RoomService();
+    private SensorService sensorService = new SensorService();
 
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
     public List<Room> getAllRooms() {
-        return roomDAO.getAll();
+        return roomService.getAllRooms();
     }
 
     @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response createRoom(Room room) {
-        roomDAO.add(room);
-        return Response.status(Response.Status.CREATED)
-                .entity(room)
-                .build();
+        roomService.addRoom(room);
+        return Response.status(Response.Status.CREATED).entity(room).build();
     }
 
     @GET
     @Path("/{roomId}")
-    public Room getRoomById(@PathParam("roomId") String roomId) {
-        Room room = roomDAO.getById(roomId);
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getRoomById(@PathParam("roomId") String roomId) {
+        Room room = roomService.getRoomById(roomId);
         if (room == null) {
-            throw new DataNotFoundException("Room with ID " + roomId + " not found.");
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return room;
+        return Response.ok(room).build();
     }
 
     @DELETE
     @Path("/{roomId}")
     public Response deleteRoom(@PathParam("roomId") String roomId) {
-        Room room = roomDAO.getById(roomId);
-        if (room == null) {
-            throw new DataNotFoundException("Room with ID " + roomId + " not found.");
+        // Business Logic Constraint: Cannot delete room if it has sensors
+        if (!sensorService.getSensorsByRoomId(roomId).isEmpty()) {
+            throw new RoomNotEmptyException("Room " + roomId + " cannot be deleted because it still contains active sensors.");
         }
-
-        // Part 2.2: Safety Logic - Prevent deletion if room has sensors
-        if (!room.getSensorIds().isEmpty()) {
-            throw new RoomNotEmptyException("Cannot delete Room " + roomId + " because it contains active sensors.");
+        
+        boolean deleted = roomService.deleteRoom(roomId);
+        if (!deleted) {
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
-
-        roomDAO.delete(roomId);
         return Response.noContent().build();
     }
 }

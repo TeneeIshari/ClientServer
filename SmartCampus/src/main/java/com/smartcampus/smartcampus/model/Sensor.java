@@ -6,9 +6,8 @@ package com.smartcampus.smartcampus.model;
 
 /**
  * Model class representing a sensor in the smart campus.
- * Implements BaseModel for Generic DAO support.
  */
-public class Sensor implements BaseModel {
+public class Sensor {
     private String id; // Unique identifier, e.g., "TEMP-001"
     private String type; // Category, e.g., "Temperature", "CO2"
     private String status; // Current state: "ACTIVE", "MAINTENANCE", or "OFFLINE"
@@ -25,10 +24,8 @@ public class Sensor implements BaseModel {
         this.roomId = roomId;
     }
 
-    @Override
     public String getId() { return id; }
 
-    @Override
     public void setId(String id) { this.id = id; }
 
     public String getType() { return type; }

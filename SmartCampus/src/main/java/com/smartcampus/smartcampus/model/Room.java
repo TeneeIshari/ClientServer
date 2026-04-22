@@ -9,9 +9,8 @@ import java.util.List;
 
 /**
  * Model class representing a room in the smart campus.
- * Implements BaseModel for Generic DAO support.
  */
-public class Room implements BaseModel {
+public class Room {
     private String id; // Unique identifier, e.g., "LIB-301"
     private String name; // Human-readable name, e.g., "Library Quiet Study"
     private int capacity; // Maximum occupancy
@@ -25,10 +24,8 @@ public class Room implements BaseModel {
         this.capacity = capacity;
     }
 
-    @Override
     public String getId() { return id; }
 
-    @Override
     public void setId(String id) { this.id = id; }
 
     public String getName() { return name; }

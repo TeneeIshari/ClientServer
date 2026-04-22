@@ -4,7 +4,7 @@
  */
 package com.smartcampus.smartcampus.exceptionmapper;
 
-import com.smartcampus.smartcampus.exception.SmartCampusException.SensorUnavailableException;
+import com.smartcampus.smartcampus.exception.SensorUnavailableException;
 import com.smartcampus.smartcampus.model.ErrorMessage;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;

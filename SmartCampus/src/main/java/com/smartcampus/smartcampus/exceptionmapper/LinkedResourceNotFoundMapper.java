@@ -4,7 +4,7 @@
  */
 package com.smartcampus.smartcampus.exceptionmapper;
 
-import com.smartcampus.smartcampus.exception.SmartCampusException.LinkedResourceNotFoundException;
+import com.smartcampus.smartcampus.exception.LinkedResourceNotFoundException;
 import com.smartcampus.smartcampus.model.ErrorMessage;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
