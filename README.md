@@ -1,3 +1,97 @@
+# Smart Campus API
+
+## Overview of API Design
+The Smart Campus API is a robust, highly available RESTful service designed to manage campus infrastructure, specifically Rooms and Sensors. Built using Java and JAX-RS, it provides a seamless interface for facilities managers and automated systems.
+
+**Key Architectural Decisions:**
+- **Resource Hierarchy**: The API models the physical structure of the campus, allowing deep nesting via sub-resources (e.g., `/sensors/{id}/readings`).
+- **Data Integrity**: Enforces strict business rules, such as preventing the deletion of a room that contains active sensors.
+- **Advanced Error Handling**: Utilizes Exception Mappers to prevent internal stack traces from leaking and maps business logic errors to semantic HTTP status codes (e.g., 409 Conflict, 422 Unprocessable Entity, 403 Forbidden).
+- **Generic DAO Pattern**: Abstracted data access layers ensuring clean separation between business logic and data persistence (currently using a mocked in-memory database).
+
+## Build and Launch Instructions
+Follow these steps to build and run the API locally:
+
+### Prerequisites:
+- Java JDK 11 or higher
+- Apache Maven
+- Apache Tomcat (version 9 or 10)
+
+### Steps:
+1. **Navigate to the Project Directory:**
+   "
+   cd SmartCampus
+   "
+
+2. **Build the Project:**
+   Build the `.war` package using Maven.
+   "
+   mvn clean package
+   "
+
+3. **Deploy to Tomcat:**
+   Copy the generated `SmartCampus.war` (from the `target/` directory) into your Tomcat's `webapps` folder.
+   "
+   cp target/SmartCampus.war /path/to/tomcat/webapps/
+   "
+   *(Note: The exact path depends on your local Tomcat installation directory)*
+
+4. **Start the Server:**
+   Launch Tomcat by running its startup script.
+   "
+   /path/to/tomcat/bin/startup.sh   # On macOS/Linux
+   \path\to\tomcat\bin\startup.bat  # On Windows
+   "
+
+5. **Verify Deployment:**
+   The API will be accessible at: `http://localhost:8080/SmartCampus/api/v1`
+
+## Sample API Interactions (cURL)
+
+Below are five sample commands demonstrating interactions with the API:
+
+**1. Discovery Endpoint (GET)**
+"
+curl -X GET http://localhost:8080/SmartCampus/api/v1
+"
+
+**2. Create a New Room (POST)**
+"
+curl -X POST http://localhost:8080/SmartCampus/api/v1/rooms \
+-H "Content-Type: application/json" \
+-d '{
+  "id": "LIB-301",
+  "name": "Library Quiet Study",
+  "capacity": 50
+}'
+"
+
+**3. Get All Rooms (GET)**
+"
+curl -X GET http://localhost:8080/SmartCampus/api/v1/rooms
+"
+
+**4. Register a Sensor in a Room (POST)**
+"
+curl -X POST http://localhost:8080/SmartCampus/api/v1/sensors \
+-H "Content-Type: application/json" \
+-d '{
+  "id": "TEMP-001",
+  "type": "Temperature",
+  "status": "ACTIVE",
+  "roomId": "LIB-301"
+}'
+"
+
+**5. Filter Sensors by Type (GET)**
+"
+curl -X GET "http://localhost:8080/SmartCampus/api/v1/sensors?type=Temperature"
+"
+
+---
+
+# Conceptual Report
+
 **Part 1: Service Architecture & Setup
 Q: Explain the default lifecycle of a JAX-RS Resource class. Is a new instance instantiated for every incoming request, or does the runtime treat it as a singleton? Elaborate on how this architectural decision impacts the way you manage and synchronize your in-memory data structures (maps/lists) to prevent data loss or race conditions.**
 
