@@ -6,6 +6,7 @@ package com.smartcampus.smartcampus.exceptionmapper;
 
 
 import com.smartcampus.smartcampus.model.ErrorMessage;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
@@ -25,6 +26,13 @@ public class GlobalExceptionMapper implements ExceptionMapper<Throwable> {
 
     @Override
     public Response toResponse(Throwable exception) {
+        // Preserve explicit HTTP errors raised by JAX-RS/runtime (404, 405, etc.).
+        // These are not true internal server errors.
+        if (exception instanceof WebApplicationException) {
+            WebApplicationException webEx = (WebApplicationException) exception;
+            return webEx.getResponse();
+        }
+
         // Log the actual error for the administrator
         LOGGER.log(Level.SEVERE, "Unexpected error occurred", exception);
 

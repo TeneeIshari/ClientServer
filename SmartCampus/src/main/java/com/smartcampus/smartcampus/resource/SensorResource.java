@@ -15,8 +15,8 @@ import javax.ws.rs.core.Response;
 @Path("/sensors")
 public class SensorResource {
 
-    private SensorService sensorService = new SensorService();
-    private RoomService roomService = new RoomService();
+    private final SensorService sensorService = new SensorService();
+    private final RoomService roomService = new RoomService();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -38,6 +38,27 @@ public class SensorResource {
         
         sensorService.addSensor(sensor);
         return Response.status(Response.Status.CREATED).entity(sensor).build();
+    }
+
+    @GET
+    @Path("/{sensorId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getSensorById(@PathParam("sensorId") String sensorId) {
+        Sensor sensor = sensorService.getSensorById(sensorId);
+        if (sensor == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.ok(sensor).build();
+    }
+
+    @DELETE
+    @Path("/{sensorId}")
+    public Response deleteSensor(@PathParam("sensorId") String sensorId) {
+        boolean deleted = sensorService.deleteSensor(sensorId);
+        if (!deleted) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.noContent().build();
     }
 
     /**

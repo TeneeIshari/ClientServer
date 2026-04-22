@@ -1,6 +1,6 @@
 package com.smartcampus.smartcampus.resource;
 
-import com.smartcampus.smartcampus.exception.RoomNotEmptyException;
+import com.smartcampus.smartcampus.model.ErrorMessage;
 import com.smartcampus.smartcampus.model.Room;
 import com.smartcampus.smartcampus.service.RoomService;
 import com.smartcampus.smartcampus.service.SensorService;
@@ -45,10 +45,16 @@ public class RoomResource {
 
     @DELETE
     @Path("/{roomId}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response deleteRoom(@PathParam("roomId") String roomId) {
         // Business Logic Constraint: Cannot delete room if it has sensors
         if (!sensorService.getSensorsByRoomId(roomId).isEmpty()) {
-            throw new RoomNotEmptyException("Room " + roomId + " cannot be deleted because it still contains active sensors.");
+            ErrorMessage errorMessage = new ErrorMessage(
+                    "Room " + roomId + " cannot be deleted because it still contains active sensors.",
+                    409,
+                    "https://smartcampus.edu/api/docs/errors/409"
+            );
+            return Response.status(Response.Status.CONFLICT).entity(errorMessage).build();
         }
         
         boolean deleted = roomService.deleteRoom(roomId);
