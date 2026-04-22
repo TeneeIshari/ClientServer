@@ -26,8 +26,6 @@ public class GlobalExceptionMapper implements ExceptionMapper<Throwable> {
 
     @Override
     public Response toResponse(Throwable exception) {
-        // Preserve explicit HTTP errors raised by JAX-RS/runtime (404, 405, etc.).
-        // These are not true internal server errors.
         if (exception instanceof WebApplicationException) {
             WebApplicationException webEx = (WebApplicationException) exception;
             return webEx.getResponse();
