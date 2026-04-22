@@ -1,7 +1,7 @@
 # Smart Campus API
 
 ## Overview of API Design
-The Smart Campus API is a robust, highly available RESTful service designed to manage campus infrastructure, specifically Rooms and Sensors. Built using Java and JAX-RS, it provides a seamless interface for facilities managers and automated systems.
+The Smart Campus API is a robust, highly available RESTful service designed to manage campus infrastructure, specifically Rooms and Sensors. Built using Java and JAX-RS (Jakarta RESTful Web Services), it provides a seamless interface for facilities managers and automated systems.
 
 **Key Architectural Decisions:**
 - **Resource Hierarchy**: The API models the physical structure of the campus, allowing deep nesting via sub-resources (e.g., `/sensors/{id}/readings`).
@@ -92,8 +92,9 @@ curl -X GET "http://localhost:8080/SmartCampus/api/v1/sensors?type=Temperature"
 
 # Conceptual Report
 
-**Part 1: Service Architecture & Setup
-Q: Explain the default lifecycle of a JAX-RS Resource class. Is a new instance instantiated for every incoming request, or does the runtime treat it as a singleton? Elaborate on how this architectural decision impacts the way you manage and synchronize your in-memory data structures (maps/lists) to prevent data loss or race conditions.**
+**Part 1: Service Architecture & Setup**
+
+**Q: Explain the default lifecycle of a JAX-RS Resource class. Is a new instance instantiated for every incoming request, or does the runtime treat it as a singleton? Elaborate on how this architectural decision impacts the way you manage and synchronize your in-memory data structures (maps/lists) to prevent data loss or race conditions.**
 
 Answer: By default, JAX-RS Resource classes are request-scoped. The JAX-RS runtime instantiates a brand-new object of the Resource class for every single incoming HTTP request, and the instance is garbage-collected once the response is returned. This decision heavily impacts state management: because resource instances do not persist between calls, standard instance variables are reset every time. To maintain state across the API, data-holding structures must be decoupled from the resource instances (e.g., by utilizing singleton service layers or static collections). Furthermore, because multiple concurrent HTTP requests spawn separate instances accessing shared state simultaneously, we must utilize thread-safe structures like ConcurrentHashMap or synchronization blocks to prevent race conditions.
 
@@ -101,8 +102,9 @@ Answer: By default, JAX-RS Resource classes are request-scoped. The JAX-RS runti
 
 Answer: Hypermedia as the Engine of Application State (HATEOAS) transitions an API from a static interface to a dynamic, self-discoverable system. By including links (such as "self," "next," or "delete") directly inside JSON responses, the server guides the client on what actions are currently permitted. This benefits client developers by decoupling them from hardcoded URLs. If the backend URI structure changes, clients reading hypermedia links automatically adapt without code modifications. Additionally, the server can use links to dictate state transitions—for example, omitting a "delete" link if a room still contains sensors, preventing the client from attempting an invalid operation.
 
-**Part 2: Room Management
-Q: When returning a list of rooms, what are the implications of returning only IDs versus returning the full room objects? Consider network bandwidth and client side processing.**
+**Part 2: Room Management**
+
+**Q: When returning a list of rooms, what are the implications of returning only IDs versus returning the full room objects? Consider network bandwidth and client side processing.**
 
 Answer: Returning full room objects increases payload size and network bandwidth consumption, which can impact performance on slow networks. However, it improves client-side efficiency because the client receives all necessary data in a single HTTP round-trip, avoiding the "N+1 queries" problem. Conversely, returning only room IDs significantly reduces the initial payload size. However, this increases the burden on the client: if the UI needs room names or capacities, the client must execute many subsequent GET requests, increasing overall latency and server load. A common middle ground is returning a "summary" object that includes the ID and basic identifying information.
 
@@ -124,8 +126,9 @@ Answer: In RESTful design, the URL path represents a hierarchy of resources (e.g
 
 Answer: The Sub-Resource Locator pattern allows a parent class (SensorResource) to delegate the handling of nested paths to dedicated classes (SensorReadingResource). This provides significant benefits regarding the Separation of Concerns. If every nested operation (GET, POST, DELETE for readings) were defined within SensorResource, it would become an unmaintainable "God Object." By delegating to separate classes, the system is broken down into small, cohesive, single-responsibility files. This modularity makes the API easier to debug, test, and scale without increasing the complexity of individual controllers.
 
-**Part 5: Advanced Error Handling & Exception Mapping
-Q: Why is HTTP 422 often considered more semantically accurate than a standard 404 when the issue is a missing reference inside a valid JSON payload?**
+**Part 5: Advanced Error Handling, Exception Mapping & Logging**
+
+**Q: Why is HTTP 422 often considered more semantically accurate than a standard 404 when the issue is a missing reference inside a valid JSON payload?**
 
 Answer: HTTP 404 Not Found typically indicates that the requested endpoint itself does not exist. However, if a client successfully reaches POST /sensors with a valid JSON payload, but the roomId inside that payload refers to a non-existent room, a 404 is misleading—the endpoint was found. HTTP 422 Unprocessable Entity is more accurate because it signals that the server understood the request and the syntax was correct, but it could not process the instructions due to semantic errors (such as a referential integrity failure).
 
@@ -133,8 +136,17 @@ Answer: HTTP 404 Not Found typically indicates that the requested endpoint itsel
 
 Answer: Exposing internal Java stack traces is a critical Information Exposure vulnerability. Stack traces provide a roadmap of the backend architecture for attackers. A malicious actor could gather:
 
-Dependency Details: Traces reveal specific frameworks and version numbers (e.g., Jersey 2.32), allowing attackers to target known vulnerabilities (CVEs) associated with those versions.
+- **Dependency Details:** Traces reveal specific frameworks and version numbers (e.g., Jersey 2.32), allowing attackers to target known vulnerabilities (CVEs) associated with those versions.
+- **System Structure:** They expose internal package names and file paths, revealing the application's logic and design.
+- **Configuration Data:** Detailed error messages can leak database schemas, table names, or internal server constraints, which can be leveraged for further attacks like SQL injection. 
 
-System Structure: They expose internal package names and file paths, revealing the application's logic and design.
+By utilizing Exception Mappers to return sanitized JSON responses, these risks are eliminated.
 
-Configuration Data: Detailed error messages can leak database schemas, table names, or internal server constraints, which can be leveraged for further attacks like SQL injection. By utilizing Exception Mappers to return sanitized JSON responses, these risks are eliminated.
+**Q: Why is it advantageous to use JAX-RS filters for cross-cutting concerns like logging, rather than manually inserting Logger.info() statements inside every single resource method?**
+
+Answer: It is advantageous because it follows the principle of **Separation of Concerns** and avoids code duplication (the **DRY** principle).
+
+- **Centralized Logic:** By implementing `ContainerRequestFilter` and `ContainerResponseFilter`, you write the logging logic exactly once, rather than duplicating it across every single endpoint.
+- **Clean Resources:** Your resource methods remain clean and focused purely on business logic (e.g., saving a room) instead of being cluttered with boilerplate logging code.
+- **Consistency:** A filter guarantees that every request and response is consistently logged, removing the risk of a developer forgetting to add logging statements to a newly created method.
+- **Maintainability:** If the logging format needs to be changed later, you only have to update a single filter class, instead of hunting down and modifying `Logger.info()` statements scattered throughout hundreds of resource methods.
